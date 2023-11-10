@@ -59,8 +59,8 @@ public class testJob {
         HtmlPage page = webClient.getPage("https://gateway.zhku.edu.cn/sso/login?service=https%3A%2F%2Fgateway.zhku.edu.cn%2Fsso%2Foauth2.0%2FcallbackAuthorize%3Fclient_name%3DCasOAuthClient%26client_id%3Djwgl100001%26redirect_uri%3Dhttps%253A%252F%252Fedu-admin.zhku.edu.cn%252FLogon.do%253Fmethod%253DlogonSSOzkgc%26response_type%3Dcode%26state%3DD1");
         HtmlInput username = page.getHtmlElementById("username");
         HtmlInput password = page.getHtmlElementById("password");
-        username.setValueAttribute("xxxxxx");
-        password.setValueAttribute("xxxxxx");
+        username.setValueAttribute("");
+        password.setValueAttribute("");
         HtmlAnchor loginButton = page.getFirstByXPath("//a[@id='submit']");
         page = loginButton.click();
         // 验证cookie

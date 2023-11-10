@@ -1,10 +1,8 @@
 package com.hzzzzzy.config;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
-import javax.annotation.Resource;
 
 /**
  * @author zh

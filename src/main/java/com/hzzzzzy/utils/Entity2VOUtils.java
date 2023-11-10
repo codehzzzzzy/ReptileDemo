@@ -8,10 +8,10 @@ import java.util.List;
 /**
  * 将entityList转为对应的VOList
  */
-public class entity2VOUtils {
-    public static <Eneity,VO> List<VO> eneity2VO(List<Eneity> eneityList, Class<VO> vo){
+public class Entity2VOUtils {
+    public static <Entity,VO> List<VO> entity2VO(List<Entity> entityList, Class<VO> vo){
         List<VO> voList = new ArrayList<>();
-        eneityList.forEach(item->{
+        entityList.forEach(item->{
             VO properties = BeanUtil.copyProperties(item, vo);
             voList.add(properties);
         });

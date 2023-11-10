@@ -21,7 +21,6 @@ public class TimeParseUtils {
         String schoolStartDateStr = "2023-09-04";
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Date schoolStartDate = dateFormat.parse(schoolStartDateStr);
-
         // 当前日期
         Date currentDate = new Date();
         // 计算日期差值

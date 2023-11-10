@@ -90,7 +90,6 @@ public class PreCacheRedisHandler implements InitializingBean {
             int numThreads = Math.min(32, list.size() / 4);
             int sublistSize = list.size() / numThreads;
             List<List<String>> sublists = new ArrayList<>();
-
             // 将 list 拆分成子列表
             for (int i = 0; i < numThreads; i++) {
                 int fromIndex = i * sublistSize;
@@ -109,7 +108,7 @@ public class PreCacheRedisHandler implements InitializingBean {
                         try {
                             xmlPage = searchButton.click();
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            throw new GlobalException(new Result<>().error(BusinessFailCode.DATA_FETCH_ERROR).message("查询教师课表失败"));
                         }
                         HtmlTableRow tdRows = xmlPage.getFirstByXPath("/html/body/div/table/tbody/tr");
                         List<Course> courseList = new ArrayList<>();

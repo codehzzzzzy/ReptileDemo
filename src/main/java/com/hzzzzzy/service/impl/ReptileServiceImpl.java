@@ -52,7 +52,6 @@ public class ReptileServiceImpl implements ReptileService {
         // 跳转到教师端
         HtmlElement changeButton = page.getFirstByXPath("/html/body/div[2]/div[2]/div[1]/div[2]/div[4]/div/ul/li[2]");
         page = changeButton.click();
-
         // 跳转教师课表查询页面
         HtmlElement curriculum = page.getHtmlElementById("NEW_JSD_JXFW_WDKB_JSKBCS");
         page = curriculum.click();
@@ -60,7 +59,6 @@ public class ReptileServiceImpl implements ReptileService {
         teacherNameInput.setValueAttribute(teacherName);
         HtmlButton searchButton = page.getFirstByXPath("/html/body/div[1]/div/div[2]/form/div/div[9]/div[2]/button");
         page = searchButton.click();
-
         // 提取课程信息
         Document doc = Jsoup.parse(page.asXml());
         List<Course> courseList = new ArrayList<>();

@@ -11,6 +11,7 @@ import com.hzzzzzy.model.entity.Course;
 import com.hzzzzzy.model.entity.Result;
 import com.hzzzzzy.utils.ReadExcelUtils;
 import com.hzzzzzy.utils.ReptileUtils;
+import com.hzzzzzy.utils.TimeParseUtils;
 import com.hzzzzzy.utils.WebClientUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -86,20 +87,26 @@ public class PreCacheJob {
             int numThreads = Math.min(32, list.size() / 4);
             int sublistSize = list.size() / numThreads;
             List<List<String>> sublists = new ArrayList<>();
-
             // 将 list 拆分成子列表
             for (int i = 0; i < numThreads; i++) {
                 int fromIndex = i * sublistSize;
                 int toIndex = (i == numThreads - 1) ? list.size() : (i + 1) * sublistSize;
                 sublists.add(list.subList(fromIndex, toIndex));
             }
-
             for (List<String> sublist : sublists) {
                 executor.execute(() -> {
                     for (String teacherName : sublist) {
-                        // 查找输入框元素
+                        // 填写教师名称
                         HtmlInput teacherNameInput = searchPage.getHtmlElementById("skjs");
                         teacherNameInput.setValueAttribute(teacherName);
+                        // 填写周数
+                        HtmlSelect weekSelect1 = searchPage.getHtmlElementById("zc1");
+                        HtmlOption option1 = weekSelect1.getOptionByText("第" + TimeParseUtils.getDate() + "周");
+                        HtmlSelect weekSelect2 = searchPage.getHtmlElementById("zc2");
+                        HtmlOption option2 = weekSelect1.getOptionByText("第" + TimeParseUtils.getDate() + "周");
+                        weekSelect1.setSelectedAttribute(option1, true);
+                        weekSelect2.setSelectedAttribute(option2, true);
+                        // 查询
                         HtmlButton searchButton = searchPage.getFirstByXPath("/html/body/div[1]/div/div[2]/form/div/div[9]/div[2]/button");
                         HtmlPage xmlPage = null;
                         try {
@@ -107,33 +114,52 @@ public class PreCacheJob {
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-                        // 提取课程信息
-                        Document doc = Jsoup.parse(xmlPage.asXml());
+                        HtmlTableRow tdRows = xmlPage.getFirstByXPath("/html/body/div/table/tbody/tr");
                         List<Course> courseList = new ArrayList<>();
                         executor.execute(() -> {
-                            Elements courseElements = doc.select("td[valign=top] div[class=kbcontent1]");
-                            for (Element courseElement : courseElements) {
-                                String courseInfo = courseElement.text();
-                                // 解析课程信息
-                                int count = 1; // 计数器(统计节数)
-                                String[] strings = courseInfo.split(" ");
-                                Course course = new Course();
-                                course.setCourseName(strings[0]);
-                                course.setClazz(strings[1]);
-                                course.setTeacherName(strings[2]);
-                                course.setWeekNumber(ReptileUtils.splitWeekPlus(strings[3]));
-                                course.setClazzRoom(strings[4]);
-                                course.setClazzPeriods(ReptileUtils.getClassPeriods(count++));
-                                courseList.add(course);
+                            // 计算节数
+                            int periodCount = 1;
+                            // 计算星期数
+                            int dayOfWeekCount = 1;
+                            if (tdRows != null){
+                                for (int i = 1; i < tdRows.getCells().size(); i++) {
+                                    List<HtmlTableCell> cells = tdRows.getCells();
+                                    // 当tr中没有包括div时，说明存在课程，进行解析
+                                    if (!cells.get(i).getElementsByTagName("div").isEmpty()) {
+                                        Document doc = Jsoup.parse(cells.get(i).asXml());
+                                        // 获取div中的内容
+                                        Elements courseElements = doc.select("div[class=kbcontent1]");
+                                        for (Element courseElement : courseElements) {
+                                            String courseInfo = courseElement.text();
+                                            // 解析课程信息
+                                            String[] strings = courseInfo.split(" ");
+                                            Course course = new Course();
+                                            course.setCourseName(strings[0]);
+                                            course.setClazz(strings[1]);
+                                            course.setTeacherName(strings[2]);
+                                            course.setWeekNumber(ReptileUtils.splitWeekPlus(strings[3]));
+                                            course.setClazzRoom(strings[4]);
+                                            course.setClazzPeriods(ReptileUtils.getClassPeriods(periodCount));
+                                            course.setDayOfWeek(ReptileUtils.getDayOfWeek(dayOfWeekCount));
+                                            courseList.add(course);
+                                        }
+                                        // 加密姓名
+                                        String nameByDigest = DigestUtils.md5DigestAsHex((teacherName + SALT).getBytes(StandardCharsets.UTF_8));
+                                        String key = TEACHER_ALL_COURSE_CACHE_PREFIX + nameByDigest;
+                                        // 存在 key 删除缓存 然后再次进行重建
+                                         if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
+                                             redisTemplate.delete(key);
+                                         }
+                                         redisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(courseList));
+                                    }
+                                    periodCount++;
+                                    // 重新计数
+                                    if (periodCount == 7){
+                                        periodCount = 1;
+                                        dayOfWeekCount++;
+                                    }
+                                }
                             }
-                            // 加密姓名
-                            String nameByDigest = DigestUtils.md5DigestAsHex((teacherName + SALT).getBytes(StandardCharsets.UTF_8));
-                            String key = TEACHER_ALL_COURSE_CACHE_PREFIX + nameByDigest;
-                            // 存在 key 删除缓存 然后再次进行重建
-                            if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
-                                redisTemplate.delete(key);
-                            }
-                            redisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(courseList));
                         });
                     }
                 });

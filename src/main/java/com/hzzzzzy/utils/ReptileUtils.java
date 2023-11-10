@@ -50,7 +50,7 @@ public class ReptileUtils {
      * @return List<第x周>
      */
     public static List<String> splitWeekPlus(String originWeek) {
-        // 比如(2-4,6-7周)
+        // 比如(2-4,6-7周) --- 2,3,4,6,7
         // 去除第一个字符和尾部两个字符
         String week = originWeek.substring(1).substring(0, originWeek.length() - 3);
         ArrayList<String> list = new ArrayList<>();

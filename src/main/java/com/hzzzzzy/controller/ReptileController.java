@@ -42,6 +42,7 @@ public class ReptileController {
             @PathVariable("teacherName")
             String teacherName
     ) {
+        // todo 参考job进行修改
         executorService.execute(() -> {
             // 确保一个老师当前只能有一条线程正在爬课
             synchronized (lockMap.computeIfAbsent(teacherName, item -> new Object())) {
@@ -66,6 +67,9 @@ public class ReptileController {
         List<Course> courseList = reptileService.getCourse(teacherName);
         return new Result<>().success().message("获取成功").data(courseList);
     }
+
+
+
 
     public ReptileController(LoginService loginService, ReptileService reptileService) {
         this.loginService = loginService;
